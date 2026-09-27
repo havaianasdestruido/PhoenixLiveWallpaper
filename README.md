@@ -59,6 +59,8 @@ Or step by step:
 
 ```bash
 haxe build.hxml                                   # -> export/java/src/**/*.java
+                                                  # (-D no-compilation: Haxe only generates,
+                                                  #  Gradle does the javac against android.jar)
 cd android && gradle assembleDebug                # -> app/build/outputs/apk/debug/app-debug.apk
 ```
 
@@ -80,7 +82,8 @@ turns `source/*.hx` into Java sources, and Gradle compiles them into the APK alo
 hand written Java files.
 
 ```
-build.hxml                     -cp source -lib hxjava -main phoenix.wallpaper.Main -java export/java -dce no
+build.hxml                     -cp source -lib hxjava -main phoenix.wallpaper.Main
+                               -java export/java -dce no -D no-compilation
 
 source/
   hxandroid/                   hand written externs for the Android API we touch (35 files)

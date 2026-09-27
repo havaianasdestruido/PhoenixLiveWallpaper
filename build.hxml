@@ -19,3 +19,8 @@
 # SettingsActivity by name and PhoenixWallpaperService calls Bridge. Nothing may be
 # eliminated, so DCE is off (Main.reachable() is a second safety net).
 -dce no
+
+# Haxe only GENERATES the Java sources: hxjava's post-build javac knows
+# nothing about android.jar, and Gradle/AGP compiles export/java/src together
+# with the shim and the resources anyway.
+-D no-compilation
