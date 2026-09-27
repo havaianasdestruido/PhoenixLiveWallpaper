@@ -215,6 +215,15 @@ is the playlist:
 The art belongs to the FNF team and the Phoenix Engine authors; this project only ships it
 inside a wallpaper. `LICENSE` here covers the code.
 
+### CI
+
+`.github/workflows/build.yml` builds the whole chain on every push: Haxe 4.3.6 ->
+generated Java -> `assembleDebug` + `assembleRelease`, and uploads both APKs as
+the `phoenix-live-wallpaper-apk` artifact. The Haxe install falls back to the
+distro package if the release tarball is unreachable, and a failed run opens an
+issue carrying the compiler/Gradle output (the log archive is not reachable
+from every environment this repo gets edited in).
+
 ## Checking it without a device
 
 There is no Haxe or JDK in every environment this repo gets edited in, so two scripts cover
