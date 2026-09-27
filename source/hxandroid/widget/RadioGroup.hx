@@ -8,5 +8,5 @@ extern class RadioGroup extends View {
 	function check(id:Int):Void;
 	function clearCheck():Void;
 	function getCheckedRadioButtonId():Int;
-	function setOnCheckedChangedListener(listener:RadioGroupCheckedChangedListener):Void;
+	function setOnCheckedChangeListener(listener:RadioGroupCheckListener):Void;
 }

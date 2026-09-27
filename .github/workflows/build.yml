@@ -124,11 +124,15 @@ jobs:
 
       - name: Assemble the debug APK
         working-directory: android
-        run: gradle --no-daemon --console=plain assembleDebug 2>&1 | tee /tmp/gradle-debug.log
+        run: |
+          set -euo pipefail
+          gradle --no-daemon --console=plain assembleDebug 2>&1 | tee /tmp/gradle-debug.log
 
       - name: Assemble the release APK
         working-directory: android
-        run: gradle --no-daemon --console=plain assembleRelease 2>&1 | tee /tmp/gradle-release.log
+        run: |
+          set -euo pipefail
+          gradle --no-daemon --console=plain assembleRelease 2>&1 | tee /tmp/gradle-release.log
 
       - name: Show what ended up in the APK
         run: |

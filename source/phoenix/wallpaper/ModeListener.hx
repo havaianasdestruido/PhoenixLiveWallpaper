@@ -1,11 +1,11 @@
 package phoenix.wallpaper;
 
 import hxandroid.widget.RadioGroup;
-import hxandroid.widget.RadioGroupCheckedChangedListener;
+import hxandroid.widget.RadioGroupCheckListener;
 
-/** RadioGroup.OnCheckedChangedListener -> SettingsActivity.onModeChanged() */
+/** RadioGroup.OnCheckedChangeListener -> SettingsActivity.onModeChanged() */
 @:keep
-class ModeListener implements RadioGroupCheckedChangedListener
+class ModeListener implements RadioGroupCheckListener
 {
 	var activity:SettingsActivity;
 

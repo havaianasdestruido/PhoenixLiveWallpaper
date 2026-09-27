@@ -91,19 +91,19 @@ class SettingsActivity extends Activity implements OnClickListener implements Se
 
 		modeGroup = cast(view(RId.modeGroup), RadioGroup);
 		modeGroup.check(idForMode(prefs.mode));
-		modeGroup.setOnCheckedChangedListener(new ModeListener(this));
+		modeGroup.setOnCheckedChangeListener(new ModeListener(this));
 
 		shuffleSwitch = toggle(RId.shuffleSwitch);
 		shuffleSwitch.setChecked(prefs.shuffle);
-		shuffleSwitch.setOnCheckedChangedListener(new SwitchListener(this, SwitchListener.SHUFFLE));
+		shuffleSwitch.setOnCheckedChangeListener(new SwitchListener(this, SwitchListener.SHUFFLE));
 
 		tapSwitch = toggle(RId.tapSwitch);
 		tapSwitch.setChecked(prefs.tapToSkip);
-		tapSwitch.setOnCheckedChangedListener(new SwitchListener(this, SwitchListener.TAP));
+		tapSwitch.setOnCheckedChangeListener(new SwitchListener(this, SwitchListener.TAP));
 
 		parallaxSwitch = toggle(RId.parallaxSwitch);
 		parallaxSwitch.setChecked(prefs.parallax);
-		parallaxSwitch.setOnCheckedChangedListener(new SwitchListener(this, SwitchListener.PARALLAX));
+		parallaxSwitch.setOnCheckedChangeListener(new SwitchListener(this, SwitchListener.PARALLAX));
 
 		view(RId.applyButton).setOnClickListener(this);
 

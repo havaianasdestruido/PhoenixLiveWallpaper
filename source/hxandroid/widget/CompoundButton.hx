@@ -5,5 +5,5 @@ package hxandroid.widget;
 extern class CompoundButton extends Button {
 	function isChecked():Bool;
 	function setChecked(checked:Bool):Void;
-	function setOnCheckedChangedListener(listener:CheckedChangedListener):Void;
+	function setOnCheckedChangeListener(listener:CompoundButtonCheckListener):Void;
 }

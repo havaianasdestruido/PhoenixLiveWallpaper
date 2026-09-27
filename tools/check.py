@@ -374,21 +374,23 @@ def check_framework_strings():
 def check_identifier_spelling():
     """Both drift directions of the framework listener tokens are fatal.
 
-    * the compound family really is d-FULL: OnCheckedChangedListener. A dropped
-      letter (OnCheckedChange + Listener) names an interface no SDK has;
-    * the SeekBar family really is d-LESS: OnSeekBarChange + Listener. An added
-      letter (OnSeekBarChangedListener) is equally fictitious.
+    * the compound interfaces/setters are d-LESS before Listener:
+      OnCheckedChange + Listener (only the callback METHOD keeps its d:
+      onCheckedChanged). An added letter (OnCheckedChangedListener)
+      names an interface no SDK has - javac: cannot find symbol;
+    * the SeekBar family is d-LESS as well (OnSeekBarChange + Listener), so
+      an added letter (OnSeekBarChangedListener) is equally fictitious.
 
     Match both byte-exactly instead of guessing from context.
-    """
-    mangled_compound = re.compile(r"\w*CheckedChange(?!d)[A-Z]\w*")
+    """""
+    mangled_compound = re.compile(r"\w*CheckedChanged[A-Z]\w*")
     wrong_seekbar = re.compile(r"\w*SeekBarChanged[A-Z]\w*")
     paths = haxe_files() + glob.glob(os.path.join(ANDROID, "java", "**", "*.java"), recursive=True)
     for path in paths:
         text = read(path)
         for token in set(mangled_compound.findall(text)):
-            err("%s: '%s' is missing the 'd' of ...Changed... "
-                "(CompoundButton/RadioGroup callbacks are d-FULL)" % (rel(path), token))
+            err("%s: '%s' has a stray 'd' before ...Listener "
+                "(CompoundButton/RadioGroup interfaces are d-LESS before Listener)" % (rel(path), token))
         for token in set(wrong_seekbar.findall(text)):
             err("%s: '%s' has a stray 'd' (the SeekBar callback family "
                 "is d-LESS: OnSeekBarChangeListener)" % (rel(path), token))

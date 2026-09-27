@@ -1,17 +1,17 @@
 package phoenix.wallpaper;
 
 import hxandroid.widget.CompoundButton;
-import hxandroid.widget.CheckedChangedListener;
+import hxandroid.widget.CompoundButtonCheckListener;
 
 /**
  * One listener class shared by the three switches.
  *
- * It cannot live inside SettingsActivity: CompoundButton.OnCheckedChangedListener
- * and RadioGroup.OnCheckedChangedListener are both called `onCheckedChanged`, and
+ * It cannot live inside SettingsActivity: CompoundButton.OnCheckedChangeListener
+ * and RadioGroup.OnCheckedChangeListener are both called `onCheckedChanged`, and
  * Haxe has no method overloading.
  */
 @:keep
-class SwitchListener implements CheckedChangedListener
+class SwitchListener implements CompoundButtonCheckListener
 {
 	public static inline var SHUFFLE:Int = 1;
 	public static inline var TAP:Int = 2;

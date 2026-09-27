@@ -186,10 +186,12 @@ def arity_of(params):
 
 
 def norm_source(text):
-    """Repair the one corruption ever observed in downloaded AOSP content: a
-    dropped 'd' in the d-FULL compound family (CheckedChange + Listener).
-    d-LESS SeekBar names are the true spelling and stay untouched."""
-    return re.sub(r"CheckedChange(?!d)([A-Z])", "CheckedChange" + _D + r"\1", text)
+    """Identity. The compound interfaces are d-LESS before Listener
+    (OnCheckedChange + Listener) while the callback method keeps its d
+    (onCheckedChanged); the SeekBar family is d-LESS too. Nothing to
+    normalise - an earlier "repair" here corrupted the AOSP side to hide a
+    fictional extra d in the externs."""
+    return text
 
 
 errors = []

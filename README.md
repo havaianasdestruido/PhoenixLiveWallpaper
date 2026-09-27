@@ -144,7 +144,7 @@ That is the *only* reason. The shim forwards `onCreate` / `onVisibilityChanged` 
 | Java `float` | Haxe `Float` **is** a Java `double`, and a `double` cannot be passed where a `float` is expected | avoided entirely: the renderer only uses the `int`/`Rect` overloads of `Canvas` (`drawBitmap(bmp, Rect, Rect, Paint)`, `drawRect(int,int,int,int,Paint)`), so every coordinate stays integral |
 
 Nested **interfaces** (`SurfaceHolder.Callback`, `View.OnClickListener`,
-`SeekBar.OnSeekBarChangeListener`, `CompoundButton.OnCheckedChangedListener`, …) are implicitly
+`SeekBar.OnSeekBarChangeListener`, `CompoundButton.OnCheckedChangeListener`, …) are implicitly
 static, so Haxe *can* implement them from a top level class — that is how the settings
 screen and the `Handler` callbacks are written in Haxe.
 
