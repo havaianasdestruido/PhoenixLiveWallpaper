@@ -61,7 +61,18 @@ jobs:
       - name: Haxe selftest (haxelib)
         run: |
           set -euo pipefail
-          if [ -x /opt/haxe/haxelib ]; then /opt/haxe/haxelib version; else haxelib version; fi
+          if [ -x /opt/haxe/haxelib ] && /opt/haxe/haxelib version; then
+            echo "bundled haxelib works"
+          else
+            # the bundled haxelib binary does not exec on this runner (exit 127).
+            # remove it so PATH falls through to the distro haxelib; /opt/haxe
+            # stays first in PATH, so the compiler remains the tarball one.
+            echo "bundled haxelib unusable; falling back to the distro package"
+            sudo rm -f /opt/haxe/haxelib
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq haxe
+            haxelib version
+          fi
 
       - name: Install hxjava
         run: |
