@@ -101,15 +101,22 @@ jobs:
           grep -q "class PhoenixApp extends android.app.Application" export/java/src/phoenix/wallpaper/PhoenixApp.java
 
       # --------------------------------------------------------------- android
-      - uses: actions/setup-java@v4
+      - uses: actions/setup-java@v5
         with:
           distribution: temurin
           java-version: "17"
 
-      - uses: android-actions/setup-android@v3
-
-      - name: Install Android SDK packages
-        run: sdkmanager --install "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+      # the hosted images ship a licensed Android SDK and AGP downloads any
+      # missing component itself, so no third-party setup action is needed
+      - name: Android SDK sanity
+        run: |
+          set -euo pipefail
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          ls "$ANDROID_HOME/platforms" "$ANDROID_HOME/build-tools"
+          if [ ! -d "$ANDROID_HOME/platforms/android-34" ]; then
+            SDKM="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+            yes | "$SDKM" --install "platforms;android-34" "build-tools;34.0.0"
+          fi
 
       - uses: gradle/actions/setup-gradle@v4
         with:
