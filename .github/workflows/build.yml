@@ -42,18 +42,26 @@ jobs:
             head -20 /tmp/optlist.txt
             echo "/opt/haxe" >> "$GITHUB_PATH"
             echo "LD_LIBRARY_PATH=/opt/haxe" >> "$GITHUB_ENV"
+            # exit 127 on the runner means the dynamic loader missed something:
+            # register the bundled libraries properly instead of guessing
+            echo "/opt/haxe" | sudo tee /etc/ld.so.conf.d/haxe.conf
+            sudo ldconfig || true
           else
             echo "no tarball: using the distro haxe already in PATH"
           fi
 
-      - name: Haxe selftest
+      - name: Haxe selftest (compiler)
         run: |
           set -euo pipefail
-          haxe -version
           mkdir -p "$HOME/.haxelib"
           echo "$HOME/.haxelib" > "$HOME/.haxelibrc"
           echo "HAXELIB_PATH=$HOME/.haxelib" >> "$GITHUB_ENV"
-          haxelib version
+          if [ -x /opt/haxe/haxe ]; then /opt/haxe/haxe -version; else haxe -version; fi
+
+      - name: Haxe selftest (haxelib)
+        run: |
+          set -euo pipefail
+          if [ -x /opt/haxe/haxelib ]; then /opt/haxe/haxelib version; else haxelib version; fi
 
       - name: Install hxjava
         run: |
