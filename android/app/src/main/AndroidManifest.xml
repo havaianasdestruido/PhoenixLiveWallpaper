@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8"?>
+<manifest xmlns:android="http://schemas.android.com/apk/res/android">
+
+    <!-- No permissions at all: the art ships inside the APK and the wallpaper
+         surface is handed to us by the system. -->
+
+    <application
+        android:name="phoenix.wallpaper.PhoenixApp"
+        android:allowBackup="true"
+        android:icon="@mipmap/ic_launcher"
+        android:roundIcon="@mipmap/ic_launcher_round"
+        android:label="@string/app_name"
+        android:supportsRtl="false"
+        android:theme="@android:style/Theme.Material.NoActionBar">
+
+        <!--
+            The live wallpaper itself. BIND_WALLPAPER is what lets the system
+            wallpaper manager bind to us; the meta-data resource points at
+            res/xml/wallpaper.xml (description, thumbnail, settings activity).
+        -->
+        <service
+            android:name="dev.phoenix.wallpaper.PhoenixWallpaperService"
+            android:exported="true"
+            android:label="@string/wallpaper_name"
+            android:permission="android.permission.BIND_WALLPAPER">
+            <intent-filter>
+                <action android:name="android.service.wallpaper.WallpaperService" />
+            </intent-filter>
+            <meta-data
+                android:name="android.service.wallpaper"
+                android:resource="@xml/wallpaper" />
+        </service>
+
+        <!--
+            Launcher entry = the settings screen (Haxe: phoenix.wallpaper.SettingsActivity).
+            It is exported because the system wallpaper picker launches it through
+            android:settingsActivity in res/xml/wallpaper.xml.
+        -->
+        <activity
+            android:name="phoenix.wallpaper.SettingsActivity"
+            android:exported="true"
+            android:label="@string/app_name"
+            android:theme="@android:style/Theme.Material.NoActionBar">
+            <intent-filter>
+                <action android:name="android.intent.action.MAIN" />
+                <category android:name="android.intent.category.LAUNCHER" />
+            </intent-filter>
+        </activity>
+
+    </application>
+
+</manifest>

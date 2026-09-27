@@ -1,0 +1,240 @@
+name: build
+
+permissions:
+  contents: read
+  issues: write
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  apk:
+    name: Haxe -> Java -> APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # ------------------------------------------------------------------ haxe
+      # split into small steps: each one shows up separately in the job
+      # timeline, which is the only diagnostic this project can read
+      - name: Download Haxe
+        run: |
+          set -euo pipefail
+          HAXE_VERSION=4.3.6
+          URL="https://github.com/HaxeFoundation/haxe/releases/download/${HAXE_VERSION}/haxe-${HAXE_VERSION}-linux64.tar.gz"
+          if curl -fSL --retry 3 -o /tmp/haxe.tar.gz "$URL" 2>/tmp/curl.log; then
+            echo "downloaded:"
+            ls -l /tmp/haxe.tar.gz
+          else
+            echo "release download failed, falling back to the distro package:"
+            cat /tmp/curl.log || true
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq haxe
+          fi
+
+      - name: Unpack Haxe
+        run: |
+          set -euo pipefail
+          if [ -s /tmp/haxe.tar.gz ]; then
+            sudo mkdir -p /opt/haxe
+            sudo tar -xzf /tmp/haxe.tar.gz -C /opt/haxe --strip-components=1
+            ls -l /opt/haxe > /tmp/optlist.txt
+            head -20 /tmp/optlist.txt
+            echo "/opt/haxe" >> "$GITHUB_PATH"
+            echo "LD_LIBRARY_PATH=/opt/haxe" >> "$GITHUB_ENV"
+            # exit 127 on the runner means the dynamic loader missed something:
+            # register the bundled libraries properly instead of guessing
+            echo "/opt/haxe" | sudo tee /etc/ld.so.conf.d/haxe.conf
+            sudo ldconfig || true
+          else
+            echo "no tarball: using the distro haxe already in PATH"
+          fi
+
+      - name: Haxe selftest (compiler)
+        run: |
+          set -euo pipefail
+          mkdir -p "$HOME/.haxelib"
+          echo "$HOME/.haxelib" > "$HOME/.haxelibrc"
+          echo "HAXELIB_PATH=$HOME/.haxelib" >> "$GITHUB_ENV"
+          if [ -x /opt/haxe/haxe ]; then /opt/haxe/haxe -version; else haxe -version; fi
+
+      - name: Haxe selftest (haxelib)
+        run: |
+          set -euo pipefail
+          if [ -x /opt/haxe/haxelib ] && /opt/haxe/haxelib version; then
+            echo "bundled haxelib works"
+          else
+            # the bundled haxelib binary does not exec on this runner (exit 127).
+            # remove it so PATH falls through to the distro haxelib; /opt/haxe
+            # stays first in PATH, so the compiler remains the tarball one.
+            echo "bundled haxelib unusable; falling back to the distro package"
+            sudo rm -f /opt/haxe/haxelib
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq haxe
+            haxelib version
+          fi
+
+      - name: Install hxjava
+        run: |
+          haxelib install hxjava --always
+          haxelib list
+
+      - name: Compile source/*.hx to Java
+        run: |
+          set -euo pipefail
+          haxe build.hxml 2>&1 | tee /tmp/build.log
+
+      - name: Sanity check the generated sources
+        run: |
+          set -euo pipefail
+          test -f export/java/src/phoenix/wallpaper/Bridge.java
+          test -f export/java/src/phoenix/wallpaper/SettingsActivity.java
+          test -f export/java/src/haxe/lang/Runtime.java
+          echo "generated $(find export/java/src -name '*.java' | wc -l) java files"
+          # the Java shim calls these by name, so make sure they survived DCE
+          grep -q "public static int create" export/java/src/phoenix/wallpaper/Bridge.java
+          grep -q "public static void setVisible" export/java/src/phoenix/wallpaper/Bridge.java
+          grep -q "class PhoenixApp extends android.app.Application" export/java/src/phoenix/wallpaper/PhoenixApp.java
+
+      # --------------------------------------------------------------- android
+      - uses: actions/setup-java@v5
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      # the hosted images ship a licensed Android SDK and AGP downloads any
+      # missing component itself, so no third-party setup action is needed
+      - name: Android SDK sanity
+        run: |
+          set -euo pipefail
+          echo "ANDROID_HOME=$ANDROID_HOME"
+          ls "$ANDROID_HOME/platforms" "$ANDROID_HOME/build-tools"
+          if [ ! -d "$ANDROID_HOME/platforms/android-34" ]; then
+            SDKM="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
+            # `yes` dies of SIGPIPE once sdkmanager closes stdin; under pipefail
+            # that would fail the step after a successful install, so swallow
+            # the feeder and let sdkmanager's status decide
+            { yes || true; } | "$SDKM" --install "platforms;android-34" "build-tools;34.0.0"
+          fi
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.7"
+
+      - name: Assemble the debug APK
+        working-directory: android
+        run: |
+          set -euo pipefail
+          gradle --no-daemon --console=plain assembleDebug 2>&1 | tee /tmp/gradle-debug.log
+
+      - name: Assemble the release APK
+        working-directory: android
+        run: |
+          set -euo pipefail
+          gradle --no-daemon --console=plain assembleRelease 2>&1 | tee /tmp/gradle-release.log
+
+      - name: Show what ended up in the APK
+        run: |
+          set -euo pipefail
+          APK=android/app/build/outputs/apk/debug/app-debug.apk
+          ls -lh "$APK"
+          # glob instead of `ls | head`: under pipefail a closing head sends
+          # SIGPIPE upstream and turns a perfect build into a red step
+          for f in "$ANDROID_HOME"/build-tools/*/aapt2; do AAPT="$f"; break; done
+          "$AAPT" dump resources "$APK" | grep -E "wallpaper|PhoenixWallpaperService|SettingsActivity" | sed -n 1,20p || true
+          unzip -l "$APK" | grep -E "assets/fnf" | sed -n 1,20p || true
+
+      - name: Collect diagnostics
+        if: failure()
+        run: |
+          {
+            echo "--- which"; which haxe haxelib curl java gradle || true
+            echo "--- haxe -version"; haxe -version || true
+            echo "--- curl log"; cat /tmp/curl.log || true
+            echo "--- opt list"; cat /tmp/optlist.txt || true
+            echo "--- os"; head -3 /etc/os-release || true
+            echo "--- dns"; getent hosts github.com objects.githubusercontent.com || true
+            echo "--- https probe github.com"; curl -sS -o /dev/null -w '%{http_code}\n' https://github.com || true
+            echo "--- https probe release asset"; curl -sSI -o /dev/null -w '%{http_code}\n' "https://github.com/HaxeFoundation/haxe/releases/download/4.3.6/haxe-4.3.6-linux64.tar.gz" || true
+          } > /tmp/diag.txt || true
+          cat /tmp/diag.txt || true
+
+      - name: Report failure as an issue
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          {
+            echo "run: $GITHUB_RUN_ID / commit $GITHUB_SHA"
+            echo
+            echo '```'
+            cat /tmp/build.log 2>/dev/null || echo "(no build log)"
+            echo
+            tail -80 /tmp/gradle-debug.log 2>/dev/null || true
+            echo
+            tail -40 /tmp/gradle-release.log 2>/dev/null || true
+            echo
+            echo '--- apk outputs'
+            ls -R android/app/build/outputs 2>/dev/null || true
+            echo
+            echo '--- generated SettingsActivity.java 125,155'
+            sed -n '125,155p' export/java/src/phoenix/wallpaper/SettingsActivity.java 2>/dev/null || true
+            echo
+            echo '--- generated SwitchListener.java 1,12'
+            sed -n '1,12p' export/java/src/phoenix/wallpaper/SwitchListener.java 2>/dev/null || true
+            echo
+            echo '--- generated ModeListener.java 1,12'
+            sed -n '1,12p' export/java/src/phoenix/wallpaper/ModeListener.java 2>/dev/null || true
+            echo
+            echo '--- full gradle debug log tail 200'
+            tail -200 /tmp/gradle-debug.log 2>/dev/null || true
+            echo
+            tail -60 /tmp/gradle-debug.log 2>/dev/null || true
+            echo
+            tail -40 /tmp/gradle-release.log 2>/dev/null || true
+            echo
+            echo '--- apk outputs'
+            ls -R android/app/build/outputs 2>/dev/null || true
+            echo
+            echo '--- generated SettingsActivity.java 125,155'
+            sed -n '125,155p' export/java/src/phoenix/wallpaper/SettingsActivity.java 2>/dev/null || true
+            echo
+            echo '--- generated SwitchListener.java 1,12'
+            sed -n '1,12p' export/java/src/phoenix/wallpaper/SwitchListener.java 2>/dev/null || true
+            echo
+            echo '--- generated ModeListener.java 1,12'
+            sed -n '1,12p' export/java/src/phoenix/wallpaper/ModeListener.java 2>/dev/null || true
+            echo
+            echo '--- full gradle debug log tail 200'
+            tail -200 /tmp/gradle-debug.log 2>/dev/null || true
+            echo '```'
+            echo
+            echo '```'
+            cat /tmp/diag.txt 2>/dev/null || true
+            echo '```'
+          } > /tmp/report.md
+          gh issue create --repo "$GITHUB_REPOSITORY"             --title "CI failure: run $GITHUB_RUN_ID" --body-file /tmp/report.md || true
+
+      - name: Upload diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-diagnostics
+          path: |
+            /tmp/diag.txt
+            /tmp/curl.log
+            /tmp/optlist.txt
+            /tmp/build.log
+          if-no-files-found: ignore
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: phoenix-live-wallpaper-apk
+          path: |
+            android/app/build/outputs/apk/debug/app-debug.apk
+            android/app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error
