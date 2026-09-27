@@ -1,5 +1,9 @@
 name: build
 
+permissions:
+  contents: read
+  issues: write
+
 on:
   push:
     branches: ["**"]
@@ -80,7 +84,9 @@ jobs:
           haxelib list
 
       - name: Compile source/*.hx to Java
-        run: haxe build.hxml
+        run: |
+          set -euo pipefail
+          haxe build.hxml 2>&1 | tee /tmp/build.log
 
       - name: Sanity check the generated sources
         run: |
@@ -126,6 +132,24 @@ jobs:
           "$AAPT" dump resources "$APK" | grep -E "wallpaper|PhoenixWallpaperService|SettingsActivity" | head -20 || true
           unzip -l "$APK" | grep -E "assets/fnf" | head -20
 
+      - name: Report failure as an issue
+        if: failure()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          {
+            echo "run: $GITHUB_RUN_ID / commit $GITHUB_SHA"
+            echo
+            echo '```'
+            cat /tmp/build.log 2>/dev/null || echo "(no build log)"
+            echo '```'
+            echo
+            echo '```'
+            cat /tmp/diag.txt 2>/dev/null || true
+            echo '```'
+          } > /tmp/report.md
+          gh issue create --repo "$GITHUB_REPOSITORY"             --title "CI failure: run $GITHUB_RUN_ID" --body-file /tmp/report.md || true
+
       - name: Collect diagnostics
         if: failure()
         run: |
@@ -150,6 +174,7 @@ jobs:
             /tmp/diag.txt
             /tmp/curl.log
             /tmp/optlist.txt
+            /tmp/build.log
           if-no-files-found: ignore
 
       - uses: actions/upload-artifact@v4
