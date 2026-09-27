@@ -135,9 +135,11 @@ jobs:
           set -euo pipefail
           APK=android/app/build/outputs/apk/debug/app-debug.apk
           ls -lh "$APK"
-          AAPT=$(ls "$ANDROID_HOME"/build-tools/*/aapt2 | head -1)
-          "$AAPT" dump resources "$APK" | grep -E "wallpaper|PhoenixWallpaperService|SettingsActivity" | head -20 || true
-          unzip -l "$APK" | grep -E "assets/fnf" | head -20
+          # glob instead of `ls | head`: under pipefail a closing head sends
+          # SIGPIPE upstream and turns a perfect build into a red step
+          for f in "$ANDROID_HOME"/build-tools/*/aapt2; do AAPT="$f"; break; done
+          "$AAPT" dump resources "$APK" | grep -E "wallpaper|PhoenixWallpaperService|SettingsActivity" | sed -n 1,20p || true
+          unzip -l "$APK" | grep -E "assets/fnf" | sed -n 1,20p || true
 
       - name: Report failure as an issue
         if: failure()
