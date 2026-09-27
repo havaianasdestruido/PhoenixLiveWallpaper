@@ -21,28 +21,39 @@ jobs:
         run: |
           set -euo pipefail
           HAXE_VERSION=4.3.6
-          curl -fsSL --retry 3 --retry-connrefused -o /tmp/haxe.tar.gz \
-            "https://github.com/HaxeFoundation/haxe/releases/download/${HAXE_VERSION}/haxe-${HAXE_VERSION}-linux64.tar.gz"
-          ls -l /tmp/haxe.tar.gz
-          tar tzf /tmp/haxe.tar.gz | head -5
+          URL="https://github.com/HaxeFoundation/haxe/releases/download/${HAXE_VERSION}/haxe-${HAXE_VERSION}-linux64.tar.gz"
+          if curl -fSL --retry 3 -o /tmp/haxe.tar.gz "$URL" 2>/tmp/curl.log; then
+            echo "downloaded:"
+            ls -l /tmp/haxe.tar.gz
+          else
+            echo "release download failed, falling back to the distro package:"
+            cat /tmp/curl.log || true
+            sudo apt-get update -qq
+            sudo apt-get install -y -qq haxe
+          fi
 
       - name: Unpack Haxe
         run: |
           set -euo pipefail
-          sudo mkdir -p /opt/haxe
-          sudo tar -xzf /tmp/haxe.tar.gz -C /opt/haxe --strip-components=1
-          ls -l /opt/haxe | head -20
-          echo "/opt/haxe" >> "$GITHUB_PATH"
-          echo "LD_LIBRARY_PATH=/opt/haxe" >> "$GITHUB_ENV"
+          if [ -s /tmp/haxe.tar.gz ]; then
+            sudo mkdir -p /opt/haxe
+            sudo tar -xzf /tmp/haxe.tar.gz -C /opt/haxe --strip-components=1
+            ls -l /opt/haxe > /tmp/optlist.txt
+            head -20 /tmp/optlist.txt
+            echo "/opt/haxe" >> "$GITHUB_PATH"
+            echo "LD_LIBRARY_PATH=/opt/haxe" >> "$GITHUB_ENV"
+          else
+            echo "no tarball: using the distro haxe already in PATH"
+          fi
 
       - name: Haxe selftest
         run: |
           set -euo pipefail
-          /opt/haxe/haxe -version
+          haxe -version
           mkdir -p "$HOME/.haxelib"
           echo "$HOME/.haxelib" > "$HOME/.haxelibrc"
           echo "HAXELIB_PATH=$HOME/.haxelib" >> "$GITHUB_ENV"
-          /opt/haxe/haxelib version
+          haxelib version
 
       - name: Install hxjava
         run: |
@@ -95,6 +106,32 @@ jobs:
           AAPT=$(ls "$ANDROID_HOME"/build-tools/*/aapt2 | head -1)
           "$AAPT" dump resources "$APK" | grep -E "wallpaper|PhoenixWallpaperService|SettingsActivity" | head -20 || true
           unzip -l "$APK" | grep -E "assets/fnf" | head -20
+
+      - name: Collect diagnostics
+        if: failure()
+        run: |
+          {
+            echo "--- which"; which haxe haxelib curl java gradle || true
+            echo "--- haxe -version"; haxe -version || true
+            echo "--- curl log"; cat /tmp/curl.log || true
+            echo "--- opt list"; cat /tmp/optlist.txt || true
+            echo "--- os"; head -3 /etc/os-release || true
+            echo "--- dns"; getent hosts github.com objects.githubusercontent.com || true
+            echo "--- https probe github.com"; curl -sS -o /dev/null -w '%{http_code}\n' https://github.com || true
+            echo "--- https probe release asset"; curl -sSI -o /dev/null -w '%{http_code}\n' "https://github.com/HaxeFoundation/haxe/releases/download/4.3.6/haxe-4.3.6-linux64.tar.gz" || true
+          } > /tmp/diag.txt || true
+          cat /tmp/diag.txt || true
+
+      - name: Upload diagnostics
+        if: failure()
+        uses: actions/upload-artifact@v4
+        with:
+          name: ci-diagnostics
+          path: |
+            /tmp/diag.txt
+            /tmp/curl.log
+            /tmp/optlist.txt
+          if-no-files-found: ignore
 
       - uses: actions/upload-artifact@v4
         with:
