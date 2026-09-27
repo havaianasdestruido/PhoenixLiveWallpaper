@@ -136,6 +136,14 @@ class WallpaperEngine
 		}
 
 		applyPrefs();
+		// a recreated surface must not stall the slideshow: onSurfaceDestroyed()
+		// cancelled the timers and setVisible() will not run again while the engine
+		// stays visible. nextAt is untouched, so the current deadline survives.
+		if (visible)
+		{
+			scheduleTick();
+			schedulePrefetch();
+		}
 		requestFrame();
 	}
 

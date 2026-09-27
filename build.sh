@@ -93,12 +93,13 @@ TASK="assemble${VARIANT}"
 ( cd android && $GRADLE --console=plain "$TASK" )
 
 APK_DIR="android/app/build/outputs/apk/$(echo "$VARIANT" | tr '[:upper:]' '[:lower:]')"
+APK_FILE="$(find "$APK_DIR" -name '*.apk' | head -n 1 || true)"
 step "Done"
 find "$APK_DIR" -name '*.apk' -print 2>/dev/null | sed 's/^/    /' || true
-cat <<'TIP'
+cat <<TIP
 
 Install it with:
-    adb install -r android/app/build/outputs/apk/debug/app-debug.apk
+    adb install -r ${APK_FILE:-$APK_DIR/*.apk}
 Then long press the home screen -> Wallpapers -> Live wallpaper ->
 "Phoenix Engine menus" (or just launch the app and tap "Set as wallpaper...").
 

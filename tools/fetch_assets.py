@@ -47,8 +47,11 @@ def api(endpoint):
 
 
 def main():
-    tree = api("repos/%s/git/trees/%s?recursive=1" % (REPO, REF))
+    # resolve the ref first, then walk THAT commit's tree: otherwise the
+    # branch could move between the two requests and source.json would pin
+    # a commit whose trees differ from the files just downloaded
     commit = api("repos/%s/commits/%s" % (REPO, REF))["sha"]
+    tree = api("repos/%s/git/trees/%s?recursive=1" % (REPO, commit))
 
     blobs = [t for t in tree["tree"]
              if t["type"] == "blob" and t["path"].startswith(PREFIXES)]

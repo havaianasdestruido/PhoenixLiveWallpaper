@@ -63,6 +63,7 @@
 
         <TextView
             android:id="@+id/intervalLabel"
+            android:labelFor="@+id/intervalSeek"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="12dp"
@@ -80,6 +81,7 @@
 
         <TextView
             android:id="@+id/fadeLabel"
+            android:labelFor="@+id/fadeSeek"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="14dp"
@@ -176,6 +178,7 @@
 
         <TextView
             android:id="@+id/dimLabel"
+            android:labelFor="@+id/dimSeek"
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
             android:layout_marginTop="14dp"

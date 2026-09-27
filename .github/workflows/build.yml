@@ -115,7 +115,10 @@ jobs:
           ls "$ANDROID_HOME/platforms" "$ANDROID_HOME/build-tools"
           if [ ! -d "$ANDROID_HOME/platforms/android-34" ]; then
             SDKM="$ANDROID_HOME/cmdline-tools/latest/bin/sdkmanager"
-            yes | "$SDKM" --install "platforms;android-34" "build-tools;34.0.0"
+            # `yes` dies of SIGPIPE once sdkmanager closes stdin; under pipefail
+            # that would fail the step after a successful install, so swallow
+            # the feeder and let sdkmanager's status decide
+            { yes || true; } | "$SDKM" --install "platforms;android-34" "build-tools;34.0.0"
           fi
 
       - uses: gradle/actions/setup-gradle@v4
@@ -144,6 +147,21 @@ jobs:
           for f in "$ANDROID_HOME"/build-tools/*/aapt2; do AAPT="$f"; break; done
           "$AAPT" dump resources "$APK" | grep -E "wallpaper|PhoenixWallpaperService|SettingsActivity" | sed -n 1,20p || true
           unzip -l "$APK" | grep -E "assets/fnf" | sed -n 1,20p || true
+
+      - name: Collect diagnostics
+        if: failure()
+        run: |
+          {
+            echo "--- which"; which haxe haxelib curl java gradle || true
+            echo "--- haxe -version"; haxe -version || true
+            echo "--- curl log"; cat /tmp/curl.log || true
+            echo "--- opt list"; cat /tmp/optlist.txt || true
+            echo "--- os"; head -3 /etc/os-release || true
+            echo "--- dns"; getent hosts github.com objects.githubusercontent.com || true
+            echo "--- https probe github.com"; curl -sS -o /dev/null -w '%{http_code}\n' https://github.com || true
+            echo "--- https probe release asset"; curl -sSI -o /dev/null -w '%{http_code}\n' "https://github.com/HaxeFoundation/haxe/releases/download/4.3.6/haxe-4.3.6-linux64.tar.gz" || true
+          } > /tmp/diag.txt || true
+          cat /tmp/diag.txt || true
 
       - name: Report failure as an issue
         if: failure()
@@ -200,21 +218,6 @@ jobs:
             echo '```'
           } > /tmp/report.md
           gh issue create --repo "$GITHUB_REPOSITORY"             --title "CI failure: run $GITHUB_RUN_ID" --body-file /tmp/report.md || true
-
-      - name: Collect diagnostics
-        if: failure()
-        run: |
-          {
-            echo "--- which"; which haxe haxelib curl java gradle || true
-            echo "--- haxe -version"; haxe -version || true
-            echo "--- curl log"; cat /tmp/curl.log || true
-            echo "--- opt list"; cat /tmp/optlist.txt || true
-            echo "--- os"; head -3 /etc/os-release || true
-            echo "--- dns"; getent hosts github.com objects.githubusercontent.com || true
-            echo "--- https probe github.com"; curl -sS -o /dev/null -w '%{http_code}\n' https://github.com || true
-            echo "--- https probe release asset"; curl -sSI -o /dev/null -w '%{http_code}\n' "https://github.com/HaxeFoundation/haxe/releases/download/4.3.6/haxe-4.3.6-linux64.tar.gz" || true
-          } > /tmp/diag.txt || true
-          cat /tmp/diag.txt || true
 
       - name: Upload diagnostics
         if: failure()
