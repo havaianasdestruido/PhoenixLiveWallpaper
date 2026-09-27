@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+    Wallpaper metadata. The <wallpaper> element name and the android.service.wallpaper
+    meta-data key in AndroidManifest.xml are what make the service show up in the
+    system wallpaper picker.
+-->
+<wallpaper xmlns:android="http://schemas.android.com/apk/res/android"
+    android:description="@string/wallpaper_description"
+    android:settingsActivity="phoenix.wallpaper.SettingsActivity"
+    android:showMetadataInPreview="true"
+    android:thumbnail="@drawable/ic_phoenix_swirl" />

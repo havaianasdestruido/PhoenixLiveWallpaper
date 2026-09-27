@@ -1,0 +1,82 @@
+plugins {
+    id "com.android.application"
+}
+
+android {
+    namespace "dev.phoenix.wallpaper"
+    compileSdk 34
+
+    defaultConfig {
+        applicationId "dev.phoenix.wallpaper"
+        minSdk 21            // WallpaperService + VectorDrawable + Theme.Material
+        targetSdk 34
+        versionCode 1
+        versionName "1.0.0"
+    }
+
+    /*
+     * Two things make this a Haxe project rather than a Java one:
+     *
+     *  1. java.srcDirs also points at ../../export/java/src, the Java sources that
+     *     `haxe build.hxml` generates from source/. Gradle compiles them together
+     *     with the two hand written files in src/main/java.
+     *  2. assets.srcDirs points at the repository's assets/ folder, so the menu
+     *     backgrounds fetched by tools/fetch_assets.py ship as
+     *     assets/fnf/preload/images/*.png - the same relative layout the engine
+     *     uses, no copying step.
+     */
+    sourceSets {
+        main {
+            java.srcDirs = ["src/main/java", "../../export/java/src"]
+            assets.srcDirs = ["../../assets"]
+        }
+    }
+
+    buildTypes {
+        debug {
+            applicationIdSuffix ""
+        }
+        release {
+            // R8 would have to understand the hxjava runtime; keep it off.
+            minifyEnabled false
+            shrinkResources false
+            proguardFiles getDefaultProguardFile("proguard-android-optimize.txt"), "proguard-rules.pro"
+            // Signed with the debug key so `assembleRelease` yields an installable
+            // APK without a keystore. Replace with a real signingConfig to publish.
+            signingConfig signingConfigs.debug
+        }
+    }
+
+    compileOptions {
+        // hxjava emits Java 8+ source (diamonds, String switch, ...)
+        sourceCompatibility JavaVersion.VERSION_11
+        targetCompatibility JavaVersion.VERSION_11
+    }
+
+    lint {
+        abortOnError false
+        warningsAsErrors false
+    }
+
+    packagingOptions {
+        resources.excludes += ["META-INF/LICENSE.txt", "META-INF/NOTICE.txt"]
+    }
+}
+
+/*
+ * `gradle haxeBuild` recompiles the Haxe half. build.sh and CI run it before
+ * assembling; it is not wired into preBuild so that opening the project in Android
+ * Studio without Haxe installed still configures cleanly.
+ */
+tasks.register("haxeBuild", Exec) {
+    group = "build"
+    description = "Compiles source/*.hx to Java with `haxe build.hxml`"
+    workingDir = rootProject.projectDir.parentFile
+    commandLine "haxe", "build.hxml"
+}
+
+tasks.register("haxeClean", Delete) {
+    group = "build"
+    description = "Deletes the generated Haxe -> Java sources"
+    delete "${rootProject.projectDir.parentFile}/export"
+}

@@ -1,0 +1,21 @@
+# Haxe -> Java. Run from the repository root:  haxe build.hxml
+#
+# Output lands in export/java/src, which android/app/build.gradle adds to the app
+# module's java.srcDirs, so Gradle compiles the generated Java together with the
+# two hand written files in android/app/src/main/java.
+#
+# Requires the hxjava haxelib:  haxelib install hxjava
+# Nothing else - the Android bindings are hand written externs under
+# source/hxandroid, so this build does not depend on -java-lib android.jar or on
+# hxjava's extern generator.
+
+-cp source
+-lib hxjava
+
+-main phoenix.wallpaper.Main
+-java export/java
+
+# Every class here is reached from Java: the manifest instantiates PhoenixApp and
+# SettingsActivity by name and PhoenixWallpaperService calls Bridge. Nothing may be
+# eliminated, so DCE is off (Main.reachable() is a second safety net).
+-dce no

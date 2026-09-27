@@ -1,3 +1,28 @@
 .haxelib/
 .haxelsp/recording/
 dump/
+
+# Haxe -> Java output (regenerate with: haxe build.hxml)
+export/
+
+# Gradle / Android Studio
+.gradle/
+local.properties
+android/.gradle/
+android/build/
+android/app/build/
+android/app/release/
+.idea/
+*.iml
+captures/
+
+# build results
+*.apk
+*.aab
+*.keystore
+*.jks
+
+# os noise
+.DS_Store
+Thumbs.db
+.cache/

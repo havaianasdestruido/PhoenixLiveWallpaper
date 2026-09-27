@@ -1,0 +1,65 @@
+{
+  "comment": [
+    "Playlist for the live wallpaper. Order matters: sequential mode walks this",
+    "list top to bottom, shuffle mode picks from it at random (never repeating",
+    "the current slide).",
+    "",
+    "  asset : path relative to the APK's assets/ root (see tools/fetch_assets.py)",
+    "  label : shown in the settings screen and in the tap-to-skip toast",
+    "  tint  : optional ARGB hex. Replicates MainMenuState.hx, which draws",
+    "          menuDesat with `color = 0xFFfd719b` (magenta) on top of menuBG.",
+    "",
+    "Regenerate the PNGs with: python3 tools/fetch_assets.py"
+  ],
+  "slides": [
+    {
+      "asset": "fnf/preload/images/menuBG.png",
+      "label": "Main Menu (menuBG)"
+    },
+    {
+      "asset": "fnf/preload/images/menuBGBlue.png",
+      "label": "Blue Menu (menuBGBlue)"
+    },
+    {
+      "asset": "fnf/preload/images/menuBGMagenta.png",
+      "label": "Magenta Menu (menuBGMagenta)"
+    },
+    {
+      "asset": "fnf/preload/images/menuDesat.png",
+      "label": "Desat / magenta flash (menuDesat)",
+      "tint": "#FFFD719B"
+    },
+    {
+      "asset": "fnf/preload/images/menubackgrounds/menu_stage.png",
+      "label": "Stage - Tutorial & Week 1 (Daddy Dearest)"
+    },
+    {
+      "asset": "fnf/preload/images/menubackgrounds/menu_halloween.png",
+      "label": "Halloween - Week 2 (Spooky Month)"
+    },
+    {
+      "asset": "fnf/preload/images/menubackgrounds/menu_philly.png",
+      "label": "Philly - Week 3 (Pico)"
+    },
+    {
+      "asset": "fnf/preload/images/menubackgrounds/menu_limo.png",
+      "label": "Limo - Week 4 (Mommy Must Murder)"
+    },
+    {
+      "asset": "fnf/preload/images/menubackgrounds/menu_christmas.png",
+      "label": "Christmas - Week 5 (Red Snow)"
+    },
+    {
+      "asset": "fnf/preload/images/menubackgrounds/menu_school.png",
+      "label": "School - Week 6 (Hating Simulator)"
+    },
+    {
+      "asset": "fnf/preload/images/menubackgrounds/menu_tank.png",
+      "label": "Tank - Week 7 (Tankman)"
+    },
+    {
+      "asset": "fnf/preload/images/menubackgrounds/menu_phillystreets.png",
+      "label": "Philly Streets - Weekend 1 (Due Debts)"
+    }
+  ]
+}

@@ -1,0 +1,90 @@
+name: build
+
+on:
+  push:
+    branches: ["**"]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  apk:
+    name: Haxe -> Java -> APK
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      # ------------------------------------------------------------------ haxe
+      - name: Install Haxe
+        run: |
+          set -euo pipefail
+          HAXE_VERSION=4.3.6
+          curl -sSL -o /tmp/haxe.tar.gz \
+            "https://github.com/HaxeFoundation/haxe/releases/download/${HAXE_VERSION}/haxe-${HAXE_VERSION}-linux64.tar.gz"
+          sudo mkdir -p /opt/haxe
+          sudo tar -xzf /tmp/haxe.tar.gz -C /opt/haxe --strip-components=1
+          echo "/opt/haxe" >> "$GITHUB_PATH"
+          mkdir -p "$HOME/.haxelib"
+          /opt/haxe/haxelib setup "$HOME/.haxelib"
+          echo "HAXELIB_PATH=$HOME/.haxelib" >> "$GITHUB_ENV"
+
+      - name: Install hxjava
+        run: |
+          haxe --version
+          haxelib install hxjava --always
+          haxelib list
+
+      - name: Compile source/*.hx to Java
+        run: haxe build.hxml
+
+      - name: Sanity check the generated sources
+        run: |
+          set -euo pipefail
+          test -f export/java/src/phoenix/wallpaper/Bridge.java
+          test -f export/java/src/phoenix/wallpaper/SettingsActivity.java
+          test -f export/java/src/haxe/lang/Runtime.java
+          echo "generated $(find export/java/src -name '*.java' | wc -l) java files"
+          # the Java shim calls these by name, so make sure they survived DCE
+          grep -q "public static int create" export/java/src/phoenix/wallpaper/Bridge.java
+          grep -q "public static void setVisible" export/java/src/phoenix/wallpaper/Bridge.java
+          grep -q "class PhoenixApp extends android.app.Application" export/java/src/phoenix/wallpaper/PhoenixApp.java
+
+      # --------------------------------------------------------------- android
+      - uses: actions/setup-java@v4
+        with:
+          distribution: temurin
+          java-version: "17"
+
+      - uses: android-actions/setup-android@v3
+
+      - name: Install Android SDK packages
+        run: sdkmanager --install "platform-tools" "platforms;android-34" "build-tools;34.0.0"
+
+      - uses: gradle/actions/setup-gradle@v4
+        with:
+          gradle-version: "8.7"
+
+      - name: Assemble the debug APK
+        working-directory: android
+        run: gradle --no-daemon --console=plain assembleDebug
+
+      - name: Assemble the release APK
+        working-directory: android
+        run: gradle --no-daemon --console=plain assembleRelease
+
+      - name: Show what ended up in the APK
+        run: |
+          set -euo pipefail
+          APK=android/app/build/outputs/apk/debug/app-debug.apk
+          ls -lh "$APK"
+          AAPT=$(ls "$ANDROID_HOME"/build-tools/*/aapt2 | head -1)
+          "$AAPT" dump resources "$APK" | grep -E "wallpaper|PhoenixWallpaperService|SettingsActivity" | head -20 || true
+          unzip -l "$APK" | grep -E "assets/fnf" | head -20
+
+      - uses: actions/upload-artifact@v4
+        with:
+          name: phoenix-live-wallpaper-apk
+          path: |
+            android/app/build/outputs/apk/debug/app-debug.apk
+            android/app/build/outputs/apk/release/app-release.apk
+          if-no-files-found: error

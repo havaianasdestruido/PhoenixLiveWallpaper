@@ -1,0 +1,34 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">Phoenix Live Wallpaper</string>
+    <string name="wallpaper_name">Phoenix Engine menus</string>
+    <string name="wallpaper_description">Cycles the Friday Night Funkin\' Phoenix Engine menu backgrounds — the main menu swirls and every story menu week — with a crossfade every 20 seconds. Written in Haxe.</string>
+
+    <string name="settings_title">Phoenix Live Wallpaper</string>
+    <string name="settings_subtitle">Menu backgrounds from the FNF Phoenix Engine fork, rendered by a Haxe slideshow.</string>
+
+    <string name="section_slideshow">Slideshow</string>
+    <string name="section_look">Look</string>
+    <string name="section_input">Input</string>
+
+    <string name="interval_label">Switch every 20 seconds</string>
+    <string name="fade_label">Crossfade: 900 ms</string>
+    <string name="dim_label">Dim behind icons: 0%</string>
+    <string name="mode_label">Scaling: Auto</string>
+
+    <string name="shuffle_switch">Shuffle the order</string>
+    <string name="tap_switch">Tap the wallpaper to skip</string>
+    <string name="parallax_switch">Pan with the home screen</string>
+
+    <string name="mode_auto">Auto</string>
+    <string name="mode_cover">Cover</string>
+    <string name="mode_fit">Fit</string>
+    <string name="mode_stretch">Stretch</string>
+
+    <string name="apply_button">Set as wallpaper…</string>
+    <string name="playlist_header">The playlist</string>
+    <string name="now_playing">The wallpaper has not drawn a slide yet.</string>
+
+    <string name="picker_unavailable">Could not open the wallpaper picker. Open Settings → Wallpaper and choose \"Phoenix Engine menus\".</string>
+    <string name="footer">Art: havaianasdestruido/FNF-Phoenix-Engine · assets/preload/images · engine logic in Haxe, ~130 lines of Java for WallpaperService.Engine.</string>
+</resources>
