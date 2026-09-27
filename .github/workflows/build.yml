@@ -124,11 +124,11 @@ jobs:
 
       - name: Assemble the debug APK
         working-directory: android
-        run: gradle --no-daemon --console=plain assembleDebug
+        run: gradle --no-daemon --console=plain assembleDebug 2>&1 | tee /tmp/gradle-debug.log
 
       - name: Assemble the release APK
         working-directory: android
-        run: gradle --no-daemon --console=plain assembleRelease
+        run: gradle --no-daemon --console=plain assembleRelease 2>&1 | tee /tmp/gradle-release.log
 
       - name: Show what ended up in the APK
         run: |
@@ -149,6 +149,10 @@ jobs:
             echo
             echo '```'
             cat /tmp/build.log 2>/dev/null || echo "(no build log)"
+            echo
+            tail -80 /tmp/gradle-debug.log 2>/dev/null || true
+            echo
+            tail -40 /tmp/gradle-release.log 2>/dev/null || true
             echo
             tail -60 /tmp/gradle-debug.log 2>/dev/null || true
             echo
