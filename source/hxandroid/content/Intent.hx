@@ -8,6 +8,7 @@ package hxandroid.content;
  */
 @:native("android.content.Intent")
 extern class Intent {
+	static var FLAG_ACTIVITY_NEW_TASK:Int;
 	function new(action:String);
 	function putExtra(name:String, value:ComponentName):Intent;
 	function addFlags(flags:Int):Intent;
