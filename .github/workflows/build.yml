@@ -156,9 +156,39 @@ jobs:
             echo
             tail -40 /tmp/gradle-release.log 2>/dev/null || true
             echo
+            echo '--- apk outputs'
+            ls -R android/app/build/outputs 2>/dev/null || true
+            echo
+            echo '--- generated SettingsActivity.java 125,155'
+            sed -n '125,155p' export/java/src/phoenix/wallpaper/SettingsActivity.java 2>/dev/null || true
+            echo
+            echo '--- generated SwitchListener.java 1,12'
+            sed -n '1,12p' export/java/src/phoenix/wallpaper/SwitchListener.java 2>/dev/null || true
+            echo
+            echo '--- generated ModeListener.java 1,12'
+            sed -n '1,12p' export/java/src/phoenix/wallpaper/ModeListener.java 2>/dev/null || true
+            echo
+            echo '--- full gradle debug log tail 200'
+            tail -200 /tmp/gradle-debug.log 2>/dev/null || true
+            echo
             tail -60 /tmp/gradle-debug.log 2>/dev/null || true
             echo
             tail -40 /tmp/gradle-release.log 2>/dev/null || true
+            echo
+            echo '--- apk outputs'
+            ls -R android/app/build/outputs 2>/dev/null || true
+            echo
+            echo '--- generated SettingsActivity.java 125,155'
+            sed -n '125,155p' export/java/src/phoenix/wallpaper/SettingsActivity.java 2>/dev/null || true
+            echo
+            echo '--- generated SwitchListener.java 1,12'
+            sed -n '1,12p' export/java/src/phoenix/wallpaper/SwitchListener.java 2>/dev/null || true
+            echo
+            echo '--- generated ModeListener.java 1,12'
+            sed -n '1,12p' export/java/src/phoenix/wallpaper/ModeListener.java 2>/dev/null || true
+            echo
+            echo '--- full gradle debug log tail 200'
+            tail -200 /tmp/gradle-debug.log 2>/dev/null || true
             echo '```'
             echo
             echo '```'
